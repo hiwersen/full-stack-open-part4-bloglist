@@ -14,4 +14,18 @@ const favoriteBlog = blogs =>
             :  { title, author, likes }
         , {})
 
-module.exports = { dummy, totalLikes, favoriteBlog }
+const mostBlogs = blogs => {
+    const map = {}
+    let mostBlogs = {}
+
+    blogs.forEach(({ author }) => {
+        map[author] = (map[author] || 0) + 1
+        const blogs = map[author]
+        if ( blogs > (mostBlogs.blogs || 0)) 
+            mostBlogs = { author, blogs }
+    })
+
+    return mostBlogs
+}
+
+module.exports = { dummy, totalLikes, favoriteBlog, mostBlogs }
