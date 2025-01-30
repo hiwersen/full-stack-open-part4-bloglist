@@ -28,4 +28,18 @@ const mostBlogs = blogs => {
     return mostBlogs
 }
 
-module.exports = { dummy, totalLikes, favoriteBlog, mostBlogs }
+const mostLikes = blogs => {
+    const map = {}
+    let mostLikes = {}
+
+    blogs.forEach(({ author, likes }) => {
+        map[author] = (map[author] || 0) + Number(likes || 0)
+        likes = map[author]
+        if ( likes > (mostLikes.likes || 0)) 
+            mostLikes = { author, likes }
+    })
+
+    return mostLikes
+}
+
+module.exports = { dummy, totalLikes, favoriteBlog, mostBlogs, mostLikes }
