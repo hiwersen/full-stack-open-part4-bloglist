@@ -1,0 +1,13 @@
+###
+GET http://localhost:3003/api/blogs
+
+###
+POST http://localhost:3003/api/blogs
+Content-Type: application/json
+
+{
+    "author": "John Doe",
+    "title": "Hello, World! 3",
+    "url": "https://www.example.com",
+    "likes": 0
+}
