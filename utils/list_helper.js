@@ -7,4 +7,11 @@ const totalLikes = blogs =>
             : sum
         , 0)
 
-module.exports = { dummy, totalLikes }
+const favoriteBlog = blogs =>
+    blogs.reduce((favorite, { title, author, likes }) => 
+        favorite.likes >= likes
+            ? favorite
+            :  { title, author, likes }
+        , {})
+
+module.exports = { dummy, totalLikes, favoriteBlog }
