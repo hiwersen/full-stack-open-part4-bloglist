@@ -3,28 +3,22 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 const mongoose = require('mongoose')
-const { MONGODB_URI } = require('./utils/config')
-const Blog = require('./models/blog')
+const config = require('./utils/config')
+const logger = require('./utils/logger')
+const blogsRouter = require('./controllers/blogs')
+
+mongoose.set('strictQuery', false)
 
 mongoose
-    .connect(MONGODB_URI)
-    .then(() => console.log(`Connected to MongoDB`))
-    .catch(error => console.log(`Error connecting to MongoDB: ${error.message}`))
+    .connect(config.MONGODB_URI)
+    .then(() => logger.info(`Connected to MongoDB`))
+    .catch(error => logger.error(`Error connecting to MongoDB: ${error.message}`))
 
 app.use(cors())
+app.use(express.static('dist'))
 app.use(express.json())
 
-app.get('/api/blogs', async (_, response) => {
-    const blogs = await Blog.find({})
-    response.json(blogs)
-})
-
-app.post('/api/blogs', async (request, response) => {
-    const { author, title, url, likes } = request.body
-    const blog = new Blog({ title, author, url, likes: likes || 0 })
-    const result = await blog.save()
-    response.status(201).json(result)
-})
+app.use('/api/blogs', blogsRouter)
 
 module.exports = app
 

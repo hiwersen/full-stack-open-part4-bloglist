@@ -8,9 +8,11 @@ const MONGODB_URI = process.env.NODE_ENV === 'test'
 
 const PORT = process.env.PORT || 3003
 
-module.exports = {
+const config = {
     JWT_SECRET,
     MONGODB_URI,
     PORT
 }
+
+module.exports = config
 
