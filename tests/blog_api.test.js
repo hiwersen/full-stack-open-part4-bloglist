@@ -64,11 +64,15 @@ beforeEach(async () => {
     await Blog.insertMany(blogs)
 })
 
-describe('HTTP GET /app/blogs', () => {
+describe('GET /api/blogs', () => {
 
     test(`should return ${blogs.length} blog posts`, async () => {
         const actual = await api.get('/api/blogs')
         assert(actual.body.length, blogs.length)
+    })
+
+    test(`should return status code "200 OK"`, async () => {
+        await api.get('/api/blogs').expect(200)
     })
 
     test(`should return json format`, async () => {
@@ -83,6 +87,45 @@ describe('HTTP GET /app/blogs', () => {
     test(`every blog should not contain "_id" property`, async () => {
         const { body: result } = await api.get('/api/blogs')
         assert(result.every(blog => !Object.keys(blog).includes('_id')))
+    })
+
+})
+
+describe('POST /api/blogs', () => {
+
+    const newBlog = {
+        author: "John Doe",
+        title: 'Hello, World!',
+        url: 'https://example.com',
+        likes: 75
+      }
+
+    test(`should increase total blogs by one`, async () => {
+        await api.post('/api/blogs').send(newBlog)
+        const after = await Blog.find({})
+        const actual = after.length
+        const expected = blogs.length + 1
+        assert.strictEqual(actual, expected)
+    })
+
+    test(`should save newBlog's content to DB`, async () => {
+        await api.post('/api/blogs').send(newBlog)
+        let actual = await Blog.findOne(newBlog)
+
+        if (actual) {
+            actual = actual?.toJSON()
+            delete actual.id
+        }
+
+        assert.deepStrictEqual(actual, newBlog)
+    })
+
+    test(`should return status code "201 Created"`, async () => {
+        await api.post('/api/blogs').send(newBlog).expect(201)
+    })
+
+    test(`should return json format`, async () => {
+        await api.post('/api/blogs').send(newBlog).expect('Content-Type', /application\/json/)
     })
 
 })
