@@ -106,32 +106,56 @@ describe('POST /api/blogs', () => {
         url: 'https://example.com'
     }
 
-    test(`should increase total blogs by one`, async () => {
-        await api.post('/api/blogs').send(newBlog)
-        const after = await Blog.find({})
-        const actual = after.length
-        const expected = blogs.length + 1
-        assert.strictEqual(actual, expected)
-    })
-
-    test(`should save newBlog's content to DB`, async () => {
-        await api.post('/api/blogs').send(newBlog)
-        let actual = await Blog.findOne(newBlog)
-
-        if (actual) {
-            actual = actual?.toJSON()
-            delete actual.id
+    const invalidBlogs = [
+        {
+            description: `missing "title"`,
+            blog: {
+                author: "John Doe",
+                url: 'https://example.com',
+                likes: 75
+            }
+        },
+        {
+            description: `missing "url"`,
+            blog: {
+                author: "John Doe",
+                title: 'Hello, World!',
+                likes: 75
+            }
         }
 
-        assert.deepStrictEqual(actual, newBlog)
-    })
+    ]
 
-    test(`should return status code "201 Created"`, async () => {
-        await api.post('/api/blogs').send(newBlog).expect(201)
-    })
+    describe('valid request', () => {
 
-    test(`should return json format`, async () => {
-        await api.post('/api/blogs').send(newBlog).expect('Content-Type', /application\/json/)
+        test(`should increase total blogs by one`, async () => {
+            await api.post('/api/blogs').send(newBlog)
+            const after = await Blog.find({})
+            const actual = after.length
+            const expected = blogs.length + 1
+            assert.strictEqual(actual, expected)
+        })
+    
+        test(`should save newBlog's content to database`, async () => {
+            await api.post('/api/blogs').send(newBlog)
+            let actual = await Blog.findOne(newBlog)
+    
+            if (actual) {
+                actual = actual?.toJSON()
+                delete actual.id
+            }
+    
+            assert.deepStrictEqual(actual, newBlog)
+        })
+    
+        test(`should return status code "201 Created"`, async () => {
+            await api.post('/api/blogs').send(newBlog).expect(201)
+        })
+    
+        test(`should return json format`, async () => {
+            await api.post('/api/blogs').send(newBlog).expect('Content-Type', /application\/json/)
+        })
+
     })
 
     test(`missing "likes" defaults to zero`, async () => {
@@ -139,6 +163,37 @@ describe('POST /api/blogs', () => {
         assert.strictEqual(result.likes, 0)
     })
 
+    describe('Invalid requests', () => {
+
+        invalidBlogs.forEach(({ description, blog }) => {
+
+            describe(`when ${description}`, () => {
+
+                test(`should not increase total blogs by one`, async () => {
+                    await api.post('/api/blogs').send(blog)
+                    const after = await Blog.find({})
+                    const actual = after.length
+                    const expected = blogs.length
+                    assert.strictEqual(actual, expected)
+                })
+            
+                test(`should not save invalid blog's content to database`, async () => {
+                    await api.post('/api/blogs').send(blog)
+                    let actual = await Blog.findOne(blog)
+                    assert.strictEqual(actual, null)
+                })
+
+                test(`should return status code "400 Bad Request"`, async () => {
+                    await api.post('/api/blogs').send(blog).expect(400)
+                })
+            
+                test(`should return error message`, async () => {
+                    const { body: result } = await api.post('/api/blogs').send(blog)
+                    assert(result.error)
+                })
+            })
+        })
+    })
 })
 
 after(async () => {
