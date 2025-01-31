@@ -75,6 +75,16 @@ describe('HTTP GET /app/blogs', () => {
         await api.get('/api/blogs').expect('Content-Type', /application\/json/)
     })
 
+    test(`every blog should contain "id" property`, async () => {
+        const { body: result } = await api.get('/api/blogs')
+        assert(result.every(blog => Object.keys(blog).includes('id')))
+    })
+
+    test(`every blog should not contain "_id" property`, async () => {
+        const { body: result } = await api.get('/api/blogs')
+        assert(result.every(blog => !Object.keys(blog).includes('_id')))
+    })
+
 })
 
 after(async () => {
