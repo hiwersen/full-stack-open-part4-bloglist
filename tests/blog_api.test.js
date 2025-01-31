@@ -100,6 +100,12 @@ describe('POST /api/blogs', () => {
         likes: 75
       }
 
+    const noLikes = {
+        author: "John Doe",
+        title: 'Hello, World!',
+        url: 'https://example.com'
+    }
+
     test(`should increase total blogs by one`, async () => {
         await api.post('/api/blogs').send(newBlog)
         const after = await Blog.find({})
@@ -126,6 +132,11 @@ describe('POST /api/blogs', () => {
 
     test(`should return json format`, async () => {
         await api.post('/api/blogs').send(newBlog).expect('Content-Type', /application\/json/)
+    })
+
+    test(`missing "likes" defaults to zero`, async () => {
+        const { body: result } = await api.post('/api/blogs').send(noLikes)
+        assert.strictEqual(result.likes, 0)
     })
 
 })
