@@ -178,9 +178,10 @@ describe('POST /api/blogs', () => {
                 })
             
                 test(`should not save invalid blog's content to database`, async () => {
+                    const before = await Blog.find({})
                     await api.post('/api/blogs').send(blog)
-                    let actual = await Blog.findOne(blog)
-                    assert.strictEqual(actual, null)
+                    const after = await Blog.find({})
+                    assert.deepStrictEqual(before, after)
                 })
 
                 test(`should return status code "400 Bad Request"`, async () => {
