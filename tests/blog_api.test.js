@@ -163,7 +163,7 @@ describe('POST /api/blogs', () => {
         assert.strictEqual(result.likes, 0)
     })
 
-    describe('Invalid requests', () => {
+    describe('invalid requests', () => {
 
         invalidBlogs.forEach(({ description, blog }) => {
 
@@ -190,6 +190,230 @@ describe('POST /api/blogs', () => {
                 test(`should return error message`, async () => {
                     const { body: result } = await api.post('/api/blogs').send(blog)
                     assert(result.error)
+                })
+            })
+        })
+    })
+})
+
+describe('DELETE /api/blogs/:id', () => {
+
+    const id = "5a422a851b54a676234d17f7"
+
+    const invalidRequests = [
+        {
+            description: 'non-existing resource',
+            id: '5a422a851b54a676234d17f0',
+            status: [204, "204 No Content"],
+            error: false
+        },
+        {
+            description: 'invalid ID',
+            id: 'xxxxxxxxxxxxxxxxxxxxxxxx',
+            status: [400, "400 Bad Request"],
+            error: true
+        },
+        {
+            description: 'missing ID',
+            id: '',
+            status: [404, "404 Not Found"],
+            error: true
+        }
+    ]
+ 
+    describe('valid request', () => {
+
+        test(`should decrease total blogs by one`, async () => {
+            await api.delete(`/api/blogs/${id}`)
+            const result = await Blog.find({})
+            const actual = result.length
+            const expected = blogs.length - 1
+            assert.strictEqual(actual, expected)
+        })
+
+        test(`should delete blog's content from database`, async () => {
+            await api.delete(`/api/blogs/${id}`)
+            const result = await Blog.findById(id)
+            assert(!result)
+        })
+
+        test(`should return status code "204 No Content"`, async () => {
+            await api.delete(`/api/blogs/${id}`).expect(204)
+        })
+    })
+
+    describe('invalid requests', () => {
+
+        invalidRequests.forEach(({ description, id, status, error }) => {
+
+            describe(description, () => {
+
+                test(`should not decrease total blogs`, async () => {
+                    await api.delete(`/api/blogs/${id}`)
+                    const result = await Blog.find({})
+                    const actual = result.length
+                    const expected = blogs.length
+                    assert.strictEqual(actual, expected)
+                })
+        
+                test(`should return status code ${status[1]}`, async () => {
+                    await api.delete(`/api/blogs/${id}`).expect(status[0])
+                })
+
+                test(`should ${ error ? '' : 'not ' }return error`, async () => {
+                    const { body: result } = await api.delete(`/api/blogs/${id}`)
+                    assert.equal(!!result.error, error)
+                })
+            })
+        })
+    })
+})
+
+describe('PUT /api/blogs/:id', () => {
+
+    const validRequests = [
+        {
+            description: 'all fields',
+            id: "5a422a851b54a676234d17f7",
+            blog: {
+                title: "React patterns99",
+                author: "Michael Chan99",
+                url: "https://reactpatterns.com/99",
+                likes: 99,
+              }
+        },
+        {
+            description: '"title" only',
+            id: "5a422a851b54a676234d17f7",
+            blog: {
+                title: "React patterns99"
+              }
+        },
+        {
+            description: '"author" only',
+            id: "5a422a851b54a676234d17f7",
+            blog: {
+                author: "Michael Chan99"
+              }
+        },
+        {
+            description: '"url" only',
+            id: "5a422a851b54a676234d17f7",
+            blog: {
+                url: "https://reactpatterns.com/99"
+              }
+        },
+        {
+            description: '"likes" only',
+            id: "5a422a851b54a676234d17f7",
+            blog: {
+                likes: 99
+              }
+        },
+        {
+            description: 'no fields',
+            id: "5a422a851b54a676234d17f7",
+            blog: {}
+        },
+    ]
+
+    const invalidRequests = [
+        {
+            description: 'non-existing resource',
+            id: '5a422a851b54a676234d17f0',
+            blog: {
+                title: "React patterns",
+                author: "Michael Chan",
+                url: "https://reactpatterns.com/",
+                likes: 7,
+              },
+            status: [404, "404 Not Found"],
+            error: false
+        },
+        {
+            description: 'invalid ID',
+            id: 'xxxxxxxxxxxxxxxxxxxxxxxx',
+            blog: {
+                title: "React patterns",
+                author: "Michael Chan",
+                url: "https://reactpatterns.com/",
+                likes: 7,
+              },
+            status: [400, "400 Bad Request"],
+            error: true
+        },
+        {
+            description: 'missing ID',
+            id: '',
+            blog: {
+                title: "React patterns",
+                author: "Michael Chan",
+                url: "https://reactpatterns.com/",
+                likes: 7,
+              },
+            status: [404, "404 Not Found"],
+            error: true
+        }
+    ]
+
+    describe(`in all cases`, () => {
+        
+        const all = validRequests.concat(invalidRequests)
+
+        describe(`should not change total blogs`, () => {
+
+            all.forEach(({ description, id, blog }) => {
+
+                test(`when updating: ${description}`, async () => {
+                    await api.put(`/api/blogs/${id}`).send(blog)
+                        const after = await Blog.find({})
+                        const actual = after.length
+                        const expected = blogs.length
+                        assert.strictEqual(actual, expected)
+                })
+            }) 
+        })
+    })
+
+    describe('valid requests', () => {
+
+        validRequests.forEach(({ description, id, blog }) => {
+
+            describe(`when updating: ${description}`, () => {
+
+                test(`should update blog's requested field(s)`, async () => {
+                    await api.put(`/api/blogs/${id}`).send(blog)
+                    const result = await Blog.findById(id)
+
+                    assert(Object.keys(blog).every(key => blog[key] === result[key]))
+                })
+
+                test(`should return status code "200 OK"`, async () => {
+                    await api.put(`/api/blogs/${id}`).send(blog).expect(200)
+                })
+
+                test(`should return json format`, async () => {
+                    await api.put(`/api/blogs/${id}`).send(blog)
+                        .expect('Content-Type', /application\/json/)
+                })
+            })
+        })
+
+    })
+
+    describe('invalid requests', () => {
+
+        invalidRequests.forEach(({ description, id, blog, status, error }) => {
+
+            describe(`when updating: ${description}`, () => {
+
+                test(`should return status code ${status[1]}`, async () => {
+                    await api.put(`/api/blogs/${id}`).send(blog).expect(status[0])
+                })
+
+                test(`should ${ error ? '' : 'not ' }return error`, async () => {
+                    const { body: result } = await api.put(`/api/blogs/${id}`).send(blog)
+                    assert.equal(!!result.error, error)
                 })
             })
         })

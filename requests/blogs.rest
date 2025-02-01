@@ -2,12 +2,29 @@
 GET http://localhost:3003/api/blogs
 
 ###
+GET http://localhost:3003/api/blogs/679b4d8f27d1017eb7edbc22
+
+###
 POST http://localhost:3003/api/blogs
 Content-Type: application/json
 
 {
     "author": "John Doe",
     "title": "Hello, World! 3",
+    "url": "https://www.example.com",
+    "likes": 0
+}
+
+###
+DELETE http://localhost:3003/api/blogs/679b71583c80d67014239916
+
+###
+PUT http://localhost:3003/api/blogs/679b4d8f27d1017eb7edbc22
+Content-Type: application/json
+
+{
+    "title": "Hello, World!",
+    "author": "John Doe",
     "url": "https://www.example.com",
     "likes": 0
 }
