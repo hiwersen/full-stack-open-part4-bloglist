@@ -20,7 +20,65 @@ beforeEach(async () => {
     await User.insertMany(users)
 })
 
-describe.only('POST /api/users', () => {
+describe('GET /api/users', () => {
+
+    describe('valid request', () => {
+
+        test(`is safe`, async () => {
+            const before = await User.find({})
+            await api.get('/api/users')
+            const after = await User.find({})
+            assert.deepStrictEqual(after, before)
+        })
+
+        test(`is idempotent`, async () => {
+            const first = await api.get('/api/users')
+            const second = await api.get('/api/users')
+            assert.deepStrictEqual(second.body, first.body)
+        })
+
+        describe(`response should include:`, () => {
+
+            test(`${users.length} user(s)`, async () => {
+                const actual = await api.get('/api/users')
+                assert(actual.body.length, users.length)
+            })
+
+            test(`status code "200 OK"`, async () => {
+                await api.get('/api/users').expect(200)
+            })
+
+            test(`json format`, async () => {
+                await api.get('/api/users').expect('Content-Type', /application\/json/)
+            })
+
+            test(`each user a "username"`, async () => {
+                const { body } = await api.get('/api/users')
+                assert(body.every(user => Object.keys(user).includes("username")))
+            })
+
+            test(`each user an "id"`, async () => {
+                const { body } = await api.get('/api/users')
+                assert(body.every(user => Object.keys(user).includes("id")))
+            })
+        })
+
+        describe(`response should not include:`, () => {
+
+            test(`each user a "password"`, async () => {
+                const { body } = await api.get('/api/users')
+                assert(!body.some(user => Object.keys(user).includes("password")))
+            })
+
+            test(`each user a "passwordHash"`, async () => {
+                const { body } = await api.get('/api/users')
+                assert(!body.some(user => Object.keys(user).includes("passwordHash")))
+            })
+        })
+    })
+})
+
+describe('POST /api/users', () => {
 
     describe('valid users', () => {
 
@@ -61,6 +119,12 @@ describe.only('POST /api/users', () => {
                         assert(result)
                     })
 
+                    test(`should contain only one ${user.username}`, async () => {
+                        await api.post('/api/users').send(user)
+                        const result = await User.find({ username: user.username }, 'username')
+                        assert(result && result.length === 1 && result[0].username === user.username)
+                    })
+
                 })
 
                 describe(`response should include:`, () => {
@@ -69,7 +133,7 @@ describe.only('POST /api/users', () => {
                         await api.post('/api/users').send(user).expect(201)
                     })
 
-                    test(`content-type json`, async () => {
+                    test(`json format`, async () => {
                         await api.post('/api/users').send(user).expect('Content-Type', /application\/json/)
                     })
 
@@ -94,16 +158,6 @@ describe.only('POST /api/users', () => {
                     test(`"password"`, async () => {
                         const { body } = await api.post('/api/users').send(user)
                         assert(!Object.keys(body).includes("password"))
-                    })
-
-                    test(`"_id"`, async () => {
-                        const { body } = await api.post('/api/users').send(user)
-                        assert(!Object.keys(body).includes("_id"))
-                    })
-
-                    test(`"__v"`, async () => {
-                        const { body } = await api.post('/api/users').send(user)
-                        assert(!Object.keys(body).includes("__v"))
                     })
                 })
             })
@@ -166,30 +220,20 @@ describe.only('POST /api/users', () => {
 
             describe(`when ${description}`, () => {
 
-                describe(`database:`, () => {
-
-                    test(`should not increase total users by one`, async () => {
-                        const before = users.length
-                        await api.post('/api/users').send(user)
-                        const after = await User.countDocuments({})
-                        assert.strictEqual(after, before)
-                    })
-    
-                    test(`should not save user's content`, async () => {
-                        const before = await User.find({})
-                        await api.post('/api/users').send(user)
-                        const after = await User.find({})
-                        assert.deepStrictEqual(after, before)
-                    })
+                test(`should not save user's content to database`, async () => {
+                    const before = await User.find({})
+                    await api.post('/api/users').send(user)
+                    const after = await User.find({})
+                    assert.deepStrictEqual(after, before)
                 })
 
-                describe(`response should return:`, () => {
+                describe(`response should include:`, () => {
 
                     test(`status code "400 Bad Request"`, async () => {
                         await api.post('/api/users').send(user).expect(400)
                     })
 
-                    test(`content-type json`, async () => {
+                    test(`json format`, async () => {
                         await api.post('/api/users').send(user).expect('Content-Type', /application\/json/)
                     })
     

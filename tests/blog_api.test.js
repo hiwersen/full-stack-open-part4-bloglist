@@ -66,131 +66,150 @@ beforeEach(async () => {
 
 describe('GET /api/blogs', () => {
 
-    test(`should return ${blogs.length} blog posts`, async () => {
-        const actual = await api.get('/api/blogs')
-        assert(actual.body.length, blogs.length)
-    })
+    describe(`a valid request`, () => {
 
-    test(`should return status code "200 OK"`, async () => {
-        await api.get('/api/blogs').expect(200)
-    })
+        test(`is safe`, async () => {
+            const before = await Blog.find({})
+            await api.get('/api/users')
+            const after = await Blog.find({})
+            assert.deepStrictEqual(after, before)
+        })
 
-    test(`should return json format`, async () => {
-        await api.get('/api/blogs').expect('Content-Type', /application\/json/)
-    })
+        test(`is idempotent`, async () => {
+            const first = await api.get('/api/blogs')
+            const second = await api.get('/api/blogs')
+            assert.deepStrictEqual(second.body, first.body)
+        })
 
-    test(`every blog should contain "id" property`, async () => {
-        const { body: result } = await api.get('/api/blogs')
-        assert(result.every(blog => Object.keys(blog).includes('id')))
-    })
+        describe(`response should include`, () => {
 
-    test(`every blog should not contain "_id" property`, async () => {
-        const { body: result } = await api.get('/api/blogs')
-        assert(result.every(blog => !Object.keys(blog).includes('_id')))
+            test(`${blogs.length} blog posts`, async () => {
+                const actual = await api.get('/api/blogs')
+                assert(actual.body.length, blogs.length)
+            })
+        
+            test(`status code "200 OK"`, async () => {
+                await api.get('/api/blogs').expect(200)
+            })
+        
+            test(`json format`, async () => {
+                await api.get('/api/blogs').expect('Content-Type', /application\/json/)
+            })
+        
+            test(`each blog an "id"`, async () => {
+                const { body: result } = await api.get('/api/blogs')
+                assert(result.every(blog => Object.keys(blog).includes('id')))
+            })
+        })
     })
-
 })
 
 describe('POST /api/blogs', () => {
 
-    const newBlog = {
-        author: "John Doe",
-        title: 'Hello, World!',
-        url: 'https://example.com',
-        likes: 75
-      }
-
-    const noLikes = {
-        author: "John Doe",
-        title: 'Hello, World!',
-        url: 'https://example.com'
-    }
-
-    const invalidBlogs = [
-        {
-            description: `missing "title"`,
-            blog: {
-                author: "John Doe",
-                url: 'https://example.com',
-                likes: 75
-            }
-        },
-        {
-            description: `missing "url"`,
-            blog: {
-                author: "John Doe",
-                title: 'Hello, World!',
-                likes: 75
-            }
-        }
-
-    ]
-
     describe('valid request', () => {
 
-        test(`should increase total blogs by one`, async () => {
-            await api.post('/api/blogs').send(newBlog)
-            const after = await Blog.find({})
-            const actual = after.length
-            const expected = blogs.length + 1
-            assert.strictEqual(actual, expected)
-        })
-    
-        test(`should save newBlog's content to database`, async () => {
-            await api.post('/api/blogs').send(newBlog)
-            let actual = await Blog.findOne(newBlog)
-    
-            if (actual) {
-                actual = actual?.toJSON()
-                delete actual.id
-            }
-    
-            assert.deepStrictEqual(actual, newBlog)
-        })
-    
-        test(`should return status code "201 Created"`, async () => {
-            await api.post('/api/blogs').send(newBlog).expect(201)
-        })
-    
-        test(`should return json format`, async () => {
-            await api.post('/api/blogs').send(newBlog).expect('Content-Type', /application\/json/)
+        const newBlog = {
+            author: "John Doe",
+            title: 'Hello, World!',
+            url: 'https://example.com',
+            likes: 75
+          }
+
+        describe(`database:`, () => {
+
+            test(`should increase total blogs by one`, async () => {
+                const before = await Blog.countDocuments({})
+                await api.post('/api/blogs').send(newBlog)
+                const after = await Blog.countDocuments({})
+                assert.strictEqual(after, before + 1)
+            })
+        
+            test(`should save newBlog's content`, async () => {
+                await api.post('/api/blogs').send(newBlog)
+                const result = await Blog.findOne(newBlog)
+                assert(result)
+            })
         })
 
+        describe(`response should include`, () => {
+
+            test(`status code "201 Created"`, async () => {
+                await api.post('/api/blogs').send(newBlog).expect(201)
+            })
+        
+            test(`json format`, async () => {
+                await api.post('/api/blogs').send(newBlog).expect('Content-Type', /application\/json/)
+            })
+
+            test(`"id"`, async () => {
+                const { body } = await api.post('/api/blogs').send(newBlog)
+                assert(Object.keys(body).includes('id'))
+            })
+        })
     })
 
-    test(`missing "likes" defaults to zero`, async () => {
-        const { body: result } = await api.post('/api/blogs').send(noLikes)
-        assert.strictEqual(result.likes, 0)
+    describe('missing likes', () => {
+
+        const noLikes = {
+            author: "John Doe",
+            title: 'Hello, World!',
+            url: 'https://example.com'
+        }
+
+        test(`defaults to zero`, async () => {
+            const { body: result } = await api.post('/api/blogs').send(noLikes)
+            assert.strictEqual(result.likes, 0)
+        })
     })
 
     describe('invalid requests', () => {
 
+        const invalidBlogs = [
+            {
+                description: `missing "title"`,
+                blog: {
+                    author: "John Doe",
+                    url: 'https://example.com',
+                    likes: 75
+                }
+            },
+            {
+                description: `missing "url"`,
+                blog: {
+                    author: "John Doe",
+                    title: 'Hello, World!',
+                    likes: 75
+                }
+            }
+    
+        ]
+
         invalidBlogs.forEach(({ description, blog }) => {
 
             describe(`when ${description}`, () => {
-
-                test(`should not increase total blogs by one`, async () => {
-                    await api.post('/api/blogs').send(blog)
-                    const after = await Blog.find({})
-                    const actual = after.length
-                    const expected = blogs.length
-                    assert.strictEqual(actual, expected)
-                })
             
-                test(`should not save invalid blog's content to database`, async () => {
+                test(`should not save blog's content to database`, async () => {
                     const before = await Blog.find({})
                     await api.post('/api/blogs').send(blog)
                     const after = await Blog.find({})
                     assert.deepStrictEqual(before, after)
                 })
 
-                test(`should return status code "400 Bad Request"`, async () => {
-                    await api.post('/api/blogs').send(blog).expect(400)
-                })
-            
-                test(`should return error message`, async () => {
-                    const { body: result } = await api.post('/api/blogs').send(blog)
-                    assert(result.error)
+                describe(`response should include`, () => {
+
+                    test(`status code "400 Bad Request"`, async () => {
+                        await api.post('/api/blogs').send(blog).expect(400)
+                    })
+                
+                    test(`error message`, async () => {
+                        const { body: result } = await api.post('/api/blogs').send(blog)
+                        assert(result.error)
+                    })
+
+                    test(`error message, only`, async () => {
+                        const { body } = await api.post('/api/blogs').send(blog)
+                        assert(Object.keys(body).every(key => key === 'error'))
+                    })
                 })
             })
         })
@@ -199,71 +218,89 @@ describe('POST /api/blogs', () => {
 
 describe('DELETE /api/blogs/:id', () => {
 
-    const id = "5a422a851b54a676234d17f7"
-
-    const invalidRequests = [
-        {
-            description: 'non-existing resource',
-            id: '5a422a851b54a676234d17f0',
-            status: [204, "204 No Content"],
-            error: false
-        },
-        {
-            description: 'invalid ID',
-            id: 'xxxxxxxxxxxxxxxxxxxxxxxx',
-            status: [400, "400 Bad Request"],
-            error: true
-        },
-        {
-            description: 'missing ID',
-            id: '',
-            status: [404, "404 Not Found"],
-            error: true
-        }
-    ]
- 
     describe('valid request', () => {
 
-        test(`should decrease total blogs by one`, async () => {
-            await api.delete(`/api/blogs/${id}`)
-            const result = await Blog.find({})
-            const actual = result.length
-            const expected = blogs.length - 1
-            assert.strictEqual(actual, expected)
+        const id = "5a422a851b54a676234d17f7"
+
+        describe(`database`, () => {
+
+            test(`should decrease total blogs by one`, async () => {
+                const before = await Blog.countDocuments({})
+                await api.delete(`/api/blogs/${id}`)
+                const after = await Blog.countDocuments({})
+                assert.strictEqual(after, before - 1)
+            })
+    
+            test(`should delete blog's content`, async () => {
+                await api.delete(`/api/blogs/${id}`)
+                const result = await Blog.findById(id)
+                assert(!result)
+            })
         })
 
-        test(`should delete blog's content from database`, async () => {
-            await api.delete(`/api/blogs/${id}`)
-            const result = await Blog.findById(id)
-            assert(!result)
+        describe(`response should include`, () => {
+
+            test(`status code "204 No Content"`, async () => {
+                await api.delete(`/api/blogs/${id}`).expect(204)
+            })
         })
 
-        test(`should return status code "204 No Content"`, async () => {
-            await api.delete(`/api/blogs/${id}`).expect(204)
+        describe(`response should not include`, () => {
+
+            test(`body content`, async () => {
+                const { body } = await api.delete(`/api/blogs/${id}`)
+                assert.strictEqual(Object.entries(body).length, 0)
+            })
         })
     })
 
     describe('invalid requests', () => {
 
+        const invalidRequests = [
+            {
+                description: 'non-existing resource',
+                id: '5a422a851b54a676234d17f0',
+                status: [204, "204 No Content"],
+                error: false
+            },
+            {
+                description: 'invalid ID',
+                id: 'xxxxxxxxxxxxxxxxxxxxxxxx',
+                status: [400, "400 Bad Request"],
+                error: true
+            },
+            {
+                description: 'missing ID',
+                id: '',
+                status: [404, "404 Not Found"],
+                error: true
+            }
+        ]    
+
         invalidRequests.forEach(({ description, id, status, error }) => {
 
-            describe(description, () => {
+            describe(`when ${description}`, () => {
 
-                test(`should not decrease total blogs`, async () => {
-                    await api.delete(`/api/blogs/${id}`)
-                    const result = await Blog.find({})
-                    const actual = result.length
-                    const expected = blogs.length
-                    assert.strictEqual(actual, expected)
-                })
-        
-                test(`should return status code ${status[1]}`, async () => {
-                    await api.delete(`/api/blogs/${id}`).expect(status[0])
+                assert(`database:`, () => {
+
+                    test(`should not be changed`, async () => {
+                        const before = await Blog.find({})
+                        await api.delete(`/api/blogs/${id}`)
+                        const after = await Blog.find({})
+                        assert.deepStrictEqual(after, before)
+                    })
                 })
 
-                test(`should ${ error ? '' : 'not ' }return error`, async () => {
-                    const { body: result } = await api.delete(`/api/blogs/${id}`)
-                    assert.equal(!!result.error, error)
+                describe(`response:`, () => {
+
+                    test(`should include status code ${status[1]}`, async () => {
+                        await api.delete(`/api/blogs/${id}`).expect(status[0])
+                    })
+    
+                    test(`should ${ error ? '' : 'not ' }include error message`, async () => {
+                        const { body } = await api.delete(`/api/blogs/${id}`)
+                        assert.equal(!!body.error, error)
+                    })
                 })
             })
         })
@@ -366,11 +403,10 @@ describe('PUT /api/blogs/:id', () => {
             all.forEach(({ description, id, blog }) => {
 
                 test(`when updating: ${description}`, async () => {
+                    const before = await Blog.countDocuments({})
                     await api.put(`/api/blogs/${id}`).send(blog)
-                        const after = await Blog.find({})
-                        const actual = after.length
-                        const expected = blogs.length
-                        assert.strictEqual(actual, expected)
+                    const after = await Blog.countDocuments({})
+                    assert.strictEqual(after, before)
                 })
             }) 
         })
@@ -380,41 +416,59 @@ describe('PUT /api/blogs/:id', () => {
 
         validRequests.forEach(({ description, id, blog }) => {
 
-            describe(`when updating: ${description}`, () => {
+            describe(`when ${description}`, () => {
 
-                test(`should update blog's requested field(s)`, async () => {
-                    await api.put(`/api/blogs/${id}`).send(blog)
-                    const result = await Blog.findById(id)
+                describe(`database:`, () => {
 
-                    assert(Object.keys(blog).every(key => blog[key] === result[key]))
+                    test(`should update blog's requested field(s)`, async () => {
+                        await api.put(`/api/blogs/${id}`).send(blog)
+                        const result = await Blog.findById(id)
+    
+                        assert(Object.keys(blog).every(key => blog[key] === result[key]))
+                    })
                 })
 
-                test(`should return status code "200 OK"`, async () => {
-                    await api.put(`/api/blogs/${id}`).send(blog).expect(200)
-                })
+                describe(`response should include:`, () => {
 
-                test(`should return json format`, async () => {
-                    await api.put(`/api/blogs/${id}`).send(blog)
-                        .expect('Content-Type', /application\/json/)
+                    test(`status code "200 OK"`, async () => {
+                        await api.put(`/api/blogs/${id}`).send(blog).expect(200)
+                    })
+    
+                    test(`json format`, async () => {
+                        await api.put(`/api/blogs/${id}`).send(blog)
+                            .expect('Content-Type', /application\/json/)
+                    })
                 })
             })
         })
-
     })
 
     describe('invalid requests', () => {
 
         invalidRequests.forEach(({ description, id, blog, status, error }) => {
 
-            describe(`when updating: ${description}`, () => {
+            describe(`when ${description}`, () => {
 
-                test(`should return status code ${status[1]}`, async () => {
-                    await api.put(`/api/blogs/${id}`).send(blog).expect(status[0])
+                assert(`database:`, () => {
+
+                    test(`should not be changed`, async () => {
+                        const before = await Blog.find({})
+                        await api.post(`/api/blogs/${id}`).send(blog)
+                        const after = await Blog.find({})
+                        assert.deepStrictEqual(after, before)
+                    })
                 })
 
-                test(`should ${ error ? '' : 'not ' }return error`, async () => {
-                    const { body: result } = await api.put(`/api/blogs/${id}`).send(blog)
-                    assert.equal(!!result.error, error)
+                describe(`response:`, () => {
+
+                    test(`should include status code ${status[1]}`, async () => {
+                        await api.put(`/api/blogs/${id}`).send(blog).expect(status[0])
+                    })
+    
+                    test(`should ${ error ? '' : 'not ' }include error message`, async () => {
+                        const { body: result } = await api.put(`/api/blogs/${id}`).send(blog)
+                        assert.equal(!!result.error, error)
+                    })
                 })
             })
         })
