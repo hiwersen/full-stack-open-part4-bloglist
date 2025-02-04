@@ -18,6 +18,10 @@ const errorHandler = (error, _, response, next) => {
         return response.status(400).json({ error: error.message })
     }
 
+    if (error.name === 'AuthenticationError') {
+        return response.status(401).json({ error: error.message })
+    }
+
     next(error)
 }
 
