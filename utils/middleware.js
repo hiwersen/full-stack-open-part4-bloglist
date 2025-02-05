@@ -1,9 +1,35 @@
+const config = require('../utils/config')
+const User = require('../models/user')
+const jwt = require('jsonwebtoken')
+
 const tokenExtractor = (request, _, next)=> {
     const token = request.get('authorization')
 
     if (token && token.startsWith('Bearer ')) {
         request.token = token.replace('Bearer ', '')
     }
+
+    next()
+}
+
+const userExtractor = async (request, _, next) => {
+    const tokenUser = jwt.verify(request.token, config.JWT_SECRET)
+
+    if (!tokenUser.id) {
+        const error = new Error('unknown user')
+        error.name = 'AuthenticationError'
+        return next(error)
+    }
+
+    const user = await User.findById(tokenUser.id)
+
+    if (!user) {
+        const error = new Error('invalid user')
+        error.name = 'AuthenticationError'
+        return next(error)
+    }
+
+    request.user = user
 
     next()
 }
@@ -44,6 +70,6 @@ const errorHandler = (error, _, response, next) => {
     next(error)
 }
 
-const middleware = { tokenExtractor, errorHandler, unknownEndpoint }
+const middleware = { tokenExtractor , userExtractor, errorHandler, unknownEndpoint }
 
 module.exports = middleware

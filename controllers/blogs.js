@@ -3,6 +3,7 @@ const Blog = require('../models/blog')
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
 const config = require('../utils/config')
+const middleware = require('../utils/middleware')
 
 blogsRouter.get('/', async (_, response) => {
     const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
@@ -15,23 +16,8 @@ blogsRouter.get('/:id', async (request, response) => {
     response.json(blog)
 })
 
-blogsRouter.post('/', async (request, response, next) => {
-    const tokenUser = jwt.verify(request.token, config.JWT_SECRET)
-
-    if (!tokenUser.id) {
-        const error = new Error('unknown token')
-        error.name = 'AuthenticationError'
-        return next(error)
-    }
-
-    const user = await User.findById(tokenUser.id)
-
-    if (!user) {
-        const error = new Error('invalid user')
-        error.name = 'AuthenticationError'
-        return next(error)
-    }
-
+blogsRouter.post('/', middleware.userExtractor, async (request, response) => {
+    const { user } = request
     const { title, author, url, likes } = request.body
     const blog = new Blog({ title, author, url, likes: (likes || 0 ), user: user._id })
     const result = await blog.save()
@@ -40,20 +26,14 @@ blogsRouter.post('/', async (request, response, next) => {
     response.status(201).json(result)
 })
 
-blogsRouter.delete('/:id', async (request, response, next) => {
+blogsRouter.delete('/:id', middleware.userExtractor, async (request, response) => {
     const blog = await Blog.findById(request.params.id)
     
     if (!blog) return response.status(404).end()
 
-    const tokenUser = jwt.verify(request.token, config.JWT_SECRET)
+    const { user } = request
 
-    if (!tokenUser.id) {
-        const error = new Error('unknown user')
-        error.name = 'AuthenticationError'
-        return next(error)
-    }
-
-    if (tokenUser.id !== blog.user?.toString()) {
+    if (user._id.toString() !== blog.user?.toString()) {
         const error = new Error('unauthorized user')
         error.name = 'AuthorizationError'
         return next(error)
