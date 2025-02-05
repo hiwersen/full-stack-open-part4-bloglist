@@ -7,7 +7,8 @@ GET http://localhost:3003/api/blogs/679b4d8f27d1017eb7edbc22
 ###
 POST http://localhost:3003/api/blogs
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5Eb2UiLCJpZCI6IjY3OWUxZDY3ZmM0NzFhOTIzOGEwNDlkYiIsImlhdCI6MTczODc0OTYzMX0.sZgpFVSAh8GIXktGUCt8nyvQE0DsyWeC0xAz6580Rb8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5kb2UiLCJpZCI6IjY3YTMzYzA4MjFiYTQxMzc0N2E3ZTg3MiIsImlhdCI6MTczODc1MTAxMH0.GMzlGuoGS3D4mvt5KY6fCYoNGEZCaDr8-KC2kOEhyKc
+
 {
     "author": "John Doe",
     "title": "Created by John Doe",

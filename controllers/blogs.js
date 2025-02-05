@@ -16,10 +16,7 @@ blogsRouter.get('/:id', async (request, response) => {
 })
 
 blogsRouter.post('/', async (request, response, next) => {
-    const { token } = request
-    const { title, author, url, likes} = request.body
-
-    const tokenUser = jwt.verify(token, config.JWT_SECRET)
+    const tokenUser = jwt.verify(request.token, config.JWT_SECRET)
 
     if (!tokenUser.id) {
         const error = new Error('invalid token')
@@ -35,6 +32,7 @@ blogsRouter.post('/', async (request, response, next) => {
         return next(error)
     }
 
+    const { title, author, url, likes} = request.body
     const blog = new Blog({ title, author, url, likes: (likes || 0 ), user: user._id })
     const result = await blog.save()
     user.blogs = user.blogs.concat(result._id)

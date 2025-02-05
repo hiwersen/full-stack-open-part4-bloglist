@@ -1,4 +1,4 @@
-const getTokenFrom = (request, _, next)=> {
+const tokenExtractor = (request, _, next)=> {
     const token = request.get('authorization')
 
     if (token && token.startsWith('Bearer ')) {
@@ -40,6 +40,6 @@ const errorHandler = (error, _, response, next) => {
     next(error)
 }
 
-const middleware = { getTokenFrom, errorHandler, unknownEndpoint }
+const middleware = { tokenExtractor, errorHandler, unknownEndpoint }
 
 module.exports = middleware
