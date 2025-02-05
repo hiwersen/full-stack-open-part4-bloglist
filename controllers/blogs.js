@@ -1,6 +1,8 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
 const User = require('../models/user')
+const jwt = require('jsonwebtoken')
+const config = require('../utils/config')
 
 blogsRouter.get('/', async (_, response) => {
     const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
@@ -13,9 +15,26 @@ blogsRouter.get('/:id', async (request, response) => {
     response.json(blog)
 })
 
-blogsRouter.post('/', async (request, response) => {
-    const { title, author, url, likes } = request.body
-    const user = await User.findOne({ username: 'johnDoe' })
+blogsRouter.post('/', async (request, response, next) => {
+    const { token } = request
+    const { title, author, url, likes} = request.body
+
+    const tokenUser = jwt.verify(token, config.JWT_SECRET)
+
+    if (!tokenUser.id) {
+        const error = new Error('invalid token')
+        error.name = 'AuthenticationError'
+        return next(error)
+    }
+
+    const user = await User.findById(tokenUser.id)
+
+    if (!user) {
+        const error = new Error('invalid user')
+        error.name = 'AuthenticationError'
+        return next(error)
+    }
+
     const blog = new Blog({ title, author, url, likes: (likes || 0 ), user: user._id })
     const result = await blog.save()
     user.blogs = user.blogs.concat(result._id)

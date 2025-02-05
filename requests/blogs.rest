@@ -7,10 +7,10 @@ GET http://localhost:3003/api/blogs/679b4d8f27d1017eb7edbc22
 ###
 POST http://localhost:3003/api/blogs
 Content-Type: application/json
-
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5Eb2UiLCJpZCI6IjY3OWUxZDY3ZmM0NzFhOTIzOGEwNDlkYiIsImlhdCI6MTczODc0OTYzMX0.sZgpFVSAh8GIXktGUCt8nyvQE0DsyWeC0xAz6580Rb8
 {
     "author": "John Doe",
-    "title": "Hello, World! 8",
+    "title": "Created by John Doe",
     "url": "https://www.example.com",
     "likes": 0
 }
