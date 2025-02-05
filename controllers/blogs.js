@@ -19,7 +19,7 @@ blogsRouter.post('/', async (request, response, next) => {
     const tokenUser = jwt.verify(request.token, config.JWT_SECRET)
 
     if (!tokenUser.id) {
-        const error = new Error('invalid token')
+        const error = new Error('unknown token')
         error.name = 'AuthenticationError'
         return next(error)
     }
@@ -32,7 +32,7 @@ blogsRouter.post('/', async (request, response, next) => {
         return next(error)
     }
 
-    const { title, author, url, likes} = request.body
+    const { title, author, url, likes } = request.body
     const blog = new Blog({ title, author, url, likes: (likes || 0 ), user: user._id })
     const result = await blog.save()
     user.blogs = user.blogs.concat(result._id)
@@ -40,9 +40,27 @@ blogsRouter.post('/', async (request, response, next) => {
     response.status(201).json(result)
 })
 
-blogsRouter.delete('/:id', async (request, response) => {
-    const id = request.params.id
-    await Blog.findByIdAndDelete(id)
+blogsRouter.delete('/:id', async (request, response, next) => {
+    const blog = await Blog.findById(request.params.id)
+    
+    if (!blog) return response.status(404).end()
+
+    const tokenUser = jwt.verify(request.token, config.JWT_SECRET)
+
+    if (!tokenUser.id) {
+        const error = new Error('unknown user')
+        error.name = 'AuthenticationError'
+        return next(error)
+    }
+
+    if (tokenUser.id !== blog.user?.toString()) {
+        const error = new Error('unauthorized user')
+        error.name = 'AuthorizationError'
+        return next(error)
+    }
+
+    await blog.deleteOne()
+
     response.status(204).end()
 })
 

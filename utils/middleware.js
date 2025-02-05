@@ -34,7 +34,11 @@ const errorHandler = (error, _, response, next) => {
     }
 
     if (error.name === 'JsonWebTokenError') {
-        return response.status(401). json({ error: error.message })
+        return response.status(401).json({ error: error.message })
+    }
+
+    if (error.name === 'AuthorizationError') {
+        return response.status(403).json({ error: error.message })
     }
 
     next(error)
