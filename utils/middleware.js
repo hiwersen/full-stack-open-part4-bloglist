@@ -1,6 +1,15 @@
+require('dotenv').config()
 const config = require('../utils/config')
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
+
+const errorLogger = error => {
+    if (process.env.NODE_ENV !== 'test') {
+        console.log('error code ----------:', error.code)
+        console.log('error name ----------:', error.name)
+        console.log('error message -------:', error.message)
+    }
+}
 
 const tokenExtractor = (request, _, next)=> {
     const token = request.get('authorization')
@@ -40,8 +49,7 @@ const unknownEndpoint = (_, response) => {
 
 const errorHandler = (error, _, response, next) => {
 
-    console.log('error code:', error.code)
-    console.log('error name:', error.name)
+    errorLogger(error)
 
     if (error.name === 'ValidationError') {
         return response.status(400).json({ error: error.message })

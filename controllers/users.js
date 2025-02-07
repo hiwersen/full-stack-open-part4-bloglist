@@ -12,19 +12,17 @@ usersRouter.post('/', async (request, response, next) => {
 
     const isPasswordValid = typeof password === 'string' && /.{3,}/.test(password)
 
-    if (isPasswordValid) {
-        const saltRounds = 10
-        const passwordHash = await bcrypt.hash(password, saltRounds)
-
-        const user = new User({ username, passwordHash, name })
-        const result = await user.save()
-        response.status(201).json(result)
-
-    } else {
+    if (!isPasswordValid) {
         const error = new Error('invalid password')
         error.name = 'ValidationError'
-        next(error)
+        return next(error)
     }
+
+    const saltRounds = 10
+    const passwordHash = await bcrypt.hash(password, saltRounds)
+    const user = new User({ username, passwordHash, name })
+    const result = await user.save()
+    response.status(201).json(result)
 })
 
 module.exports = usersRouter

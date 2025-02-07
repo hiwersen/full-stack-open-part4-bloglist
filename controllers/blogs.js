@@ -1,8 +1,5 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
-const User = require('../models/user')
-const jwt = require('jsonwebtoken')
-const config = require('../utils/config')
 const middleware = require('../utils/middleware')
 
 blogsRouter.get('/', async (_, response) => {
@@ -26,10 +23,9 @@ blogsRouter.post('/', middleware.userExtractor, async (request, response) => {
     response.status(201).json(result)
 })
 
-blogsRouter.delete('/:id', middleware.userExtractor, async (request, response) => {
+blogsRouter.delete('/:id', middleware.userExtractor, async (request, response, next) => {
     const blog = await Blog.findById(request.params.id)
-    
-    if (!blog) return response.status(404).end()
+    if (!blog) return response.status(204).end()
 
     const { user } = request
 
@@ -39,18 +35,35 @@ blogsRouter.delete('/:id', middleware.userExtractor, async (request, response) =
         return next(error)
     }
 
+    user.blogs = user.blogs.filter(b => b.toString() !== blog._id.toString())
+    await user.save()
+
     await blog.deleteOne()
 
     response.status(204).end()
 })
 
-blogsRouter.put('/:id', async (request, response) => {
+blogsRouter.put('/:id', middleware.userExtractor, async (request, response, next) => {
     const id = request.params.id
     const { title, author, url, likes } = request.body
-    const blog = { title, author, url, likes }
-    const result = await Blog
-        .findByIdAndUpdate(id, blog, { new: true, runValidators: true, context: 'query' })
-    if (!result) return response.status(404).end()
+    const update = { title, author, url, likes }
+
+    const { user } = request
+
+    const result = await Blog.findOneAndUpdate(
+        { _id: id, user: user._id }, 
+        update, 
+        { new: true, runValidators: true, context: 'query' })
+    
+    if (!result) {
+        const blog = await Blog.findById(id)
+        if (!blog) return response.status(404).end()
+
+        const error = new Error('unauthorized user')
+        error.name = 'AuthorizationError'
+        return next(error)
+    }
+
     response.json(result)
 })
 
