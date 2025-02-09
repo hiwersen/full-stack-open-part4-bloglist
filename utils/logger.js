@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const info = (...params) => {
     console.log(...params)
 }

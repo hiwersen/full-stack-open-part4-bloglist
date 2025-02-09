@@ -7,6 +7,7 @@ const api = supertest(app)
 
 const mongoose = require('mongoose')
 const User = require('../models/user')
+const logger = require('../utils/logger')
 
 const users = [
     {
@@ -254,5 +255,5 @@ describe('POST /api/users', () => {
 
 after(async () => {
     await mongoose.connection.close()
-    console.log('Connection to MongoDB closed')
+    logger.info('Connection to MongoDB closed')
 })

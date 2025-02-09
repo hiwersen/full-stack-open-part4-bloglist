@@ -8,6 +8,7 @@ const api = supertest(app)
 const Blog = require('../models/blog')
 const User = require('../models/user')
 const mongoose = require('mongoose')
+const logger = require('../utils/logger')
 
 const path = '/api/blogs'
 
@@ -118,10 +119,10 @@ beforeEach(async () => {
 
     const blog = await Blog.findOne({})
     blogId = blog._id.toString()
-    // console.log('blogId: --------------------------', blogId)
+    // logger.info('blogId: --------------------------', blogId)
 
     const blogsCount = await Blog.countDocuments()
-    // console.log('blogs before tests ------:', blogsCount)
+    // logger.info('blogs before tests ------:', blogsCount)
 
     await User.deleteMany({})
 
@@ -135,7 +136,7 @@ beforeEach(async () => {
     await User.findOneAndDelete({ username: 'willdelete' })
 
     const usersCount = await User.countDocuments()
-    // console.log('users before tests ------:', usersCount)
+    // logger.info('users before tests ------:', usersCount)
 })
 
 describe('GET /api/blogs', () => {
@@ -715,5 +716,5 @@ afterEach(async () => {
 
 after(async () => {
     await mongoose.connection.close()
-    console.log('Connection to MongoDB closed')
+    logger.info('Connection to MongoDB closed')
 })

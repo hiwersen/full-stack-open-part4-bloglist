@@ -2,13 +2,28 @@ require('dotenv').config()
 const config = require('../utils/config')
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
+const logger = require('./logger')
+
+const requestLogger = (request, _, next) => {
+    if (process.env.NODE_ENV === 'test') return next()
+
+    logger.info('-------------------------')
+    logger.info('Method ------------------:', request.method)
+    logger.info('Path --------------------:', request.path)
+    logger.info('Body --------------------:', request.body)
+    logger.info('-------------------------')
+
+    next()
+}
 
 const errorLogger = error => {
-    if (process.env.NODE_ENV !== 'test') {
-        console.log('error code ----------:', error.code)
-        console.log('error name ----------:', error.name)
-        console.log('error message -------:', error.message)
-    }
+    if (process.env.NODE_ENV === 'test') return
+
+    logger.error('-------------------------')
+    logger.error('error code --------------:', error.code)
+    logger.error('error name --------------:', error.name)
+    logger.error('error message -----------:', error.message)
+    logger.error('-------------------------')
 }
 
 const tokenExtractor = (request, _, next)=> {
@@ -78,6 +93,6 @@ const errorHandler = (error, _, response, next) => {
     next(error)
 }
 
-const middleware = { tokenExtractor , userExtractor, errorHandler, unknownEndpoint }
+const middleware = { requestLogger, tokenExtractor , userExtractor, errorHandler, unknownEndpoint }
 
 module.exports = middleware

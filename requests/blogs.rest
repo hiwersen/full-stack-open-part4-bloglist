@@ -7,18 +7,18 @@ GET http://localhost:3003/api/blogs/67a493f358a23e48a12f5030
 ###
 POST http://localhost:3003/api/blogs
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5kb2UiLCJpZCI6IjY3YTM3NWI1MDVhOWZiZmE0MmIyY2E3MyIsImlhdCI6MTczODgzODk1N30.sXEg6prBlQftZrijavifttqs5aCZChECTyeOgOmUYhE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5kb2UiLCJpZCI6IjY3YTM3NWI1MDVhOWZiZmE0MmIyY2E3MyIsImlhdCI6MTczOTEwMzQ3OX0.exDWUmEqFyaBPNPBV7O8qh4YDun2oLIZc5bj86Cs_eA
 
 {
     "author": "John Doe",
-    "title": "Created by John Doe 3",
+    "title": "Created by John Doe 6",
     "url": "https://www.example.com",
     "likes": 0
 }
 
 ###
 DELETE http://localhost:3003/api/blogs/67a4d0688b5635b99ad80bb1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5kb2UiLCJpZCI6IjY3YTM3NWI1MDVhOWZiZmE0MmIyY2E3MyIsImlhdCI6MTczODgzODk1N30.sXEg6prBlQftZrijavifttqs5aCZChECTyeOgOmUYhE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImpvaG5kb2UiLCJpZCI6IjY3YTM3NWI1MDVhOWZiZmE0MmIyY2E3MyIsImlhdCI6MTczOTEwMzQ3OX0.exDWUmEqFyaBPNPBV7O8qh4YDun2oLIZc5bj86Cs_eA
 
 ###
 PUT http://localhost:3003/api/blogs/679b4d8f27d1017eb7edbc22
